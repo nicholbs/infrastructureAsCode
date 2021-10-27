@@ -1,0 +1,207 @@
+heat_template_version: 2016-10-14
+
+parameters:
+  flavor:
+    type: string
+  image_server: 
+    type: string
+  image_manager: 
+    type: string
+  keyPair_name:
+    type: string
+    description: Name of the keypair generated in OpenStack for SSH authentication
+    default: openStackKeyPair
+    constraints:
+      - length: { min: 1}
+        description: Check if value is null or not
+  public_internet:
+    type: string
+    description: Name of the network connected to internett
+    default: ntnu-internal  
+  openstackIP:
+    type: string
+    description: IP address of the client with access to the openstack "API"
+  stack_name:
+    type: string
+    description: Name of the stack to be created
+
+resources:
+  web_secgroup:
+      type: OS::Neutron::SecurityGroup
+      properties:
+        rules:
+          - protocol: tcp
+            port_range_min: 22
+            port_range_max: 22
+          - protocol: icmp
+          - protocol: tcp
+            port_range_min: 80
+            port_range_max: 80
+
+  internal_net:
+      type: OS::Neutron::Net
+
+  internal_subnet:
+      type: OS::Neutron::Subnet
+      properties:
+        network_id: { get_resource: internal_net }
+        cidr: "10.8.1.0/24"
+        dns_nameservers: [ "8.8.8.8", "8.8.4.4" ]
+        ip_version: 4
+
+  internal_router:
+      type: OS::Neutron::Router
+      properties:
+        external_gateway_info: { network: {get_param: public_internet } }
+
+  internal_interface:
+      type: OS::Neutron::RouterInterface
+      properties:
+        router_id: { get_resource: internal_router }
+        subnet: { get_resource: internal_subnet }
+
+  instance_port:
+      type: OS::Neutron::Port
+      properties:
+        network: { get_resource: internal_net }
+        security_groups:
+          - default
+          - { get_resource: web_secgroup }
+  
+  floating_ip:
+      type: OS::Neutron::FloatingIP
+      properties:
+        floating_network: { get_param: public_internet }
+        port_id: { get_resource: instance_port }
+
+  manager:
+      type: OS::Nova::Server
+      properties:
+        flavor: { get_param: flavor }
+        image: { get_param: image_manager }
+        key_name: { get_param: keyPair_name }
+        user_data_format: RAW
+        user_data: 
+          str_replace: 
+            template: |
+              #!/bin/bash -v
+              
+            params:
+              $openstackIP: { get_param: openstackIP }
+              $stack_name: { get_param: stack_name }
+              $keyPair: { get_param: keyPair_name }
+        networks:
+          - port: { get_resource: instance_port }
+  
+
+
+  association:
+      type: OS::Neutron::FloatingIPAssociation
+      properties:
+        floatingip_id: { get_resource: floating_ip }
+        port_id: { get_resource: instance_port }
+
+  asg:
+    type: OS::Heat::AutoScalingGroup
+    properties:
+      min_size: 1
+      max_size: 3
+      resource:
+        type: lb_server.yaml
+        properties:
+          flavor: {get_param: flavor}
+          image: {get_param: image_server}
+          key_name: {get_param: keyPair_name}
+          network: {get_resource: internal_net}
+          subnet: {get_resource: internal_subnet}
+          pool_id: {get_resource: pool_web}
+          metadata: {"metering.server_group": {get_param: "OS::stack_id"}}
+          user_data:
+            str_replace:
+              template: |
+                #!/bin/bash -v
+                echo $loadBalancer > /home/ubuntu/lb-IP
+                echo $managerIP > /home/ubuntu/manager-IP
+              params:
+                $loadBalancer: { get_attr: [ lb_floating, floating_ip_address ] }
+                $managerIP: { get_attr: [ manager, first_address ] }
+  pool_web:
+    type: OS::Octavia::Pool
+    properties:
+      listener: {get_resource: listener}
+      lb_algorithm: ROUND_ROBIN
+      protocol: HTTP
+      session_persistence:
+        type: SOURCE_IP
+  listener:
+    type: OS::Octavia::Listener
+    properties:
+      loadbalancer: {get_resource: lb}
+      protocol: HTTP
+      protocol_port: 80
+  lb:
+    type: OS::Octavia::LoadBalancer
+    properties:
+      vip_subnet: {get_resource: internal_subnet}
+  lb_monitor:
+    type: OS::Octavia::HealthMonitor
+    properties:
+      pool: { get_resource: pool_web }
+      type: TCP
+      delay: 5
+      max_retries: 5
+      timeout: 5
+  lb_floating:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: {get_param: public_internet}
+      port_id: {get_attr: [lb, vip_port_id]}
+
+  web_server_scaleup_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: {get_resource: asg}
+      cooldown: 60
+      scaling_adjustment: 1
+  web_server_scaledown_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: {get_resource: asg}
+      cooldown: 60
+      scaling_adjustment: -1
+
+ 
+
+outputs:
+  scale_up_url:
+    value: {get_attr: [web_server_scaleup_policy, alarm_url]}
+    description: >
+      This URL is the webhook to scale up the autoscaling group.  You
+      can invoke the scale-up operation by doing an HTTP POST to this
+      URL; no body nor extra headers are needed.
+  
+  scale_dn_url:
+    value: {get_attr: [web_server_scaledown_policy, alarm_url]}
+    description: >
+      This URL is the webhook to scale down the autoscaling group.
+      You can invoke the scale-down operation by doing an HTTP POST to
+      this URL; no body nor extra headers are needed.
+  
+  pool_ip_address:
+    value: {get_attr: [lb, vip_address]}
+    description: The IP address of the load balancing pool
+  
+  website_url:
+    value:
+      str_replace:
+        template: http://host/
+        params:
+          host: { get_attr: [lb_floating, floating_ip_address] }
+    description: >
+      This URL is the "external" URL that can be used to access instance
+  
+  manager_floatIp:
+    value: { get_attr: [ floating_ip, floating_ip_address ] }
+    description: Floating IP address of instance
