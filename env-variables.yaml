@@ -1,7 +1,7 @@
 parameter_defaults:
   flavor: m1.small
-  image_server: docker-node-glusterfs-server
-  image_manager: manager-glusterfs
+  image_server: Ubuntu Server 18.04 LTS (Bionic Beaver) amd64
+  image_manager: Ubuntu Server 18.04 LTS (Bionic Beaver) amd64
   key: slettMeg
   external_network_id: ntnu-internal
   stack_name: infraStack

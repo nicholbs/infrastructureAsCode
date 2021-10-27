@@ -3,7 +3,7 @@
 #Defualt values
 stackName="infraStack"
 keyPairName="slettMeg"
-stackNameClient="clientInstance"
+stackNameClient="puppet-server"
 stackNameAuto="autoScale"
 openstackIP=$(hostname -I | awk '{print $1}')
 
