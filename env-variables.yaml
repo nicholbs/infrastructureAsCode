@@ -1,5 +1,5 @@
 parameter_defaults:
-  flavor: m1.small
+  flavor: m1.medium
   image_server: Ubuntu Server 18.04 LTS (Bionic Beaver) amd64
   image_manager: Ubuntu Server 18.04 LTS (Bionic Beaver) amd64
   key: slettMeg
