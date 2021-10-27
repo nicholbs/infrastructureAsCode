@@ -1,7 +1,7 @@
 #!/bin/bash -v
 
 #Defualt values
-stackName="testStack"
+stackName="infraStack"
 keyPairName="slettMeg"
 stackNameClient="clientInstance"
 stackNameAuto="autoScale"

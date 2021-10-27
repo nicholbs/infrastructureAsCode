@@ -4,4 +4,4 @@ parameter_defaults:
   image_manager: manager-glusterfs
   key: slettMeg
   external_network_id: ntnu-internal
-  stack_name: testStack
+  stack_name: infraStack
