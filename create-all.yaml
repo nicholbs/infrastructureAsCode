@@ -85,7 +85,21 @@ resources:
           str_replace: 
             template: |
               #!/bin/bash -v
-              
+              #Oppstart script på alle maskiner for å installere puppet agent 
+              wget https://apt.puppetlabs.com/puppet6-release-bionic.deb
+              sudo dpkg -i puppet6-release-bionic.deb
+              sudo apt-get update
+              sudo apt-get install puppet-agent
+
+              # add Puppet binaries to PATH:
+              echo 'export PATH=$PATH:/opt/puppetlabs/bin/' >> ~/.bashrc
+
+              # source .bashrc to apply:
+              source ~/.bashrc
+
+              #Set riktig tidssone på alle servere
+              puppet module install puppetlabs-ntp
+              puppet module install saz-timezone
             params:
               $openstackIP: { get_param: openstackIP }
               $stack_name: { get_param: stack_name }
@@ -122,6 +136,21 @@ resources:
                 #!/bin/bash -v
                 echo $loadBalancer > /home/ubuntu/lb-IP
                 echo $managerIP > /home/ubuntu/manager-IP
+                #Oppstart script på alle maskiner for å installere puppet agent 
+                wget https://apt.puppetlabs.com/puppet6-release-bionic.deb
+                sudo dpkg -i puppet6-release-bionic.deb
+                sudo apt-get update
+                sudo apt-get install puppet-agent
+
+                # add Puppet binaries to PATH:
+                echo 'export PATH=$PATH:/opt/puppetlabs/bin/' >> ~/.bashrc
+
+                # source .bashrc to apply:
+                source ~/.bashrc
+
+                #Set riktig tidssone på alle servere
+                puppet module install puppetlabs-ntp
+                puppet module install saz-timezone
               params:
                 $loadBalancer: { get_attr: [ lb_floating, floating_ip_address ] }
                 $managerIP: { get_attr: [ manager, first_address ] }
