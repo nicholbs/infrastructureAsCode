@@ -100,10 +100,74 @@ resources:
               #Set riktig tidssone på alle servere
               puppet module install puppetlabs-ntp
               puppet module install saz-timezone
+
+              #last ned modulene for å installere gitlab og postgres
+              puppet module install puppetlabs-postgresql
+              puppet module install puppet-gitlab
+               
+              echo "# time.pp:
+              node default {
+                include ntp
+                class { 'timezone':
+                  timezone => 'Europe/Oslo',
+                }
+              }" >> ~/time.pp
+
+              echo "class { 'postgresql::globals':
+                manage_package_repo => true,
+                version             => '12',
+              }
+
+              class { 'postgresql::server':
+                listen_addresses           => '*',
+                postgres_password          => 'password',
+              }
+
+              postgresql::server::db { 'gitlabhq_production':
+                user     => 'manager',
+                password => postgresql::postgresql_password('manager', 'password'),
+              }
+
+              postgresql::server::role { 'manager':
+                password_hash => postgresql::postgresql_password('manager', 'password'),
+                superuser => true;
+              }
+
+              postgresql::server::database_grant { 'gitlabhq_production':
+                privilege => 'ALL',
+                db        => 'gitlabhq_production',
+                role      => 'manager',
+              }
+
+              postgresql::server::pg_hba_rule { 'allow application network to access app database':
+                description => 'Open up PostgreSQL for access from anyone',
+                type        => 'host',
+                database    => 'all',
+                user        => 'all',
+                address     => '0.0.0.0/0',
+                auth_method => 'md5',
+              }" >> ~/postgres.pp
+
+              echo "class { 'gitlab':
+                gitlab_rails => {
+                  'db_adapter' => "postgresql",
+                  'db_encoding' => "unicode",
+                  'db_username' => "manager",
+                  'db_password' => "password",
+                  'db_host' => '$managerIP',
+                  'db_port' => 5432,
+                },
+                logging      => {
+                  'svlogd_size' => '200 * 1024 * 1024',
+                },
+              }" >> ~/gitlab.pp
+
+              #
+              puppet apply ~/time.pp
+              puppet apply ~/postgres.pp
+              puppet apply ~/gitlab.pp
             params:
-              $openstackIP: { get_param: openstackIP }
-              $stack_name: { get_param: stack_name }
-              $keyPair: { get_param: keyPair_name }
+              $managerIP: { get_attr: [ manager, first_address ] }
         networks:
           - port: { get_resource: instance_port }
   
@@ -121,7 +185,7 @@ resources:
       min_size: 1
       max_size: 3
       resource:
-        type: lb_server.yaml
+        type: gitlab-agent.yaml
         properties:
           flavor: {get_param: flavor}
           image: {get_param: image_server}
@@ -134,8 +198,6 @@ resources:
             str_replace:
               template: |
                 #!/bin/bash -v
-                echo $loadBalancer > /home/ubuntu/lb-IP
-                echo $managerIP > /home/ubuntu/manager-IP
                 #Oppstart script på alle maskiner for å installere puppet agent 
                 wget https://apt.puppetlabs.com/puppet6-release-bionic.deb
                 sudo dpkg -i puppet6-release-bionic.deb
@@ -151,8 +213,38 @@ resources:
                 #Set riktig tidssone på alle servere
                 puppet module install puppetlabs-ntp
                 puppet module install saz-timezone
+                
+                #last ned modulene for å installere gitlab
+                puppet module install puppet-gitlab
+               
+                echo "# time.pp:
+                node default {
+                  include ntp
+                  class { 'timezone':
+                    timezone => 'Europe/Oslo',
+                  }
+                }" >> ~/time.pp
+
+                
+
+                echo "class { 'gitlab':
+                  gitlab_rails => {
+                    'db_adapter' => "postgresql",
+                    'db_encoding' => "unicode",
+                    'db_username' => "manager",
+                    'db_password' => "password",
+                    'db_host' => '$managerIP',
+                    'db_port' => 5432,
+                  },
+                  logging      => {
+                    'svlogd_size' => '200 * 1024 * 1024',
+                  },
+                }" >> ~/gitlab.pp
+
+                #Kjør puppet kode
+                puppet apply ~/time.pp
+                puppet apply ~/gitlab.pp
               params:
-                $loadBalancer: { get_attr: [ lb_floating, floating_ip_address ] }
                 $managerIP: { get_attr: [ manager, first_address ] }
   pool_web:
     type: OS::Octavia::Pool
