@@ -25,7 +25,7 @@ parameters:
     type: string
     description: Subnet used by the server
   security_group:
-    type: string
+    type: list
     description: Security groups
 
 resources:
@@ -39,9 +39,7 @@ resources:
       user_data: {get_param: user_data}
       user_data_format: RAW
       networks: [{network: {get_param: network} }]
-      security_groups:
-          - default
-          - { get_param: security_group }
+      security_groups: { get_param: security_group }
   member_web:
     type: OS::Octavia::PoolMember
     properties:
