@@ -10,7 +10,7 @@ else
 fi
 
 #Hent scale up/down URL
-scale_up_url=$(cat ~/integrasjonsprosjekt/openStack/manager/scale_down_url)
+scale_up_url=$(cat ~/infrastructureAsCode/manager/scale_down_url)
 
 #Send POST forespørsel om å minske antall servere til openstack API-et 
 curl -X POST $scale_up_url
