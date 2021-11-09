@@ -222,6 +222,7 @@ resources:
                     'db_password' => "password",
                     'db_host' => '$managerIP',
                     'db_port' => 5432,
+                    'initial_root_password' => "password",
                   },
                   logging      => {
                     'svlogd_size' => '200 * 1024 * 1024',
