@@ -166,6 +166,7 @@ resources:
           puppet apply ~/time.pp
           puppet apply ~/postgres.pp
           puppet apply ~/gitlab.pp
+          cat /etc/gitlab/initial_root_password
         networks:
           - port: { get_resource: instance_port }
   
@@ -245,6 +246,7 @@ resources:
                 #Kjør puppet kode
                 puppet apply ~/time.pp
                 puppet apply ~/gitlab.pp
+                cat /etc/gitlab/initial_root_password
               params:
                 $managerIP: { get_attr: [ manager, first_address ] }
             
