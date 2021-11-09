@@ -81,14 +81,12 @@ resources:
         user_data: 
           str_replace: 
             template: |
-             echo $managerIP
+              echo $managerIP
             params:
               $managerIP: { get_attr: [ manager, first_address ] }
         networks:
           - port: { get_resource: instance_port }
   
-
-
   association:
       type: OS::Neutron::FloatingIPAssociation
       properties:
