@@ -185,8 +185,8 @@ resources:
   asg:
     type: OS::Heat::AutoScalingGroup
     properties:
-      min_size: 4
-      max_size: 8
+      min_size: 3
+      max_size: 3
       resource:
         type: gitlab-agent.yaml
         properties:
