@@ -175,7 +175,7 @@ resources:
           network: {get_resource: internal_net}
           subnet: {get_resource: internal_subnet}
           pool_id: {get_resource: pool_web}
-          security_group: {get_resource: web_secgroup}
+          security_group: {get_attr: [web_secgroup, name]}
           metadata: {"metering.server_group": {get_param: "OS::stack_id"}}
           user_data:
             str_replace:
