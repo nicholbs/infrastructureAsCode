@@ -86,7 +86,6 @@ resources:
         user_data_format: RAW
         user_data: |
           #!/bin/bash -v
-          managerIP=$(hostname -I | awk '{print $1}')
           #Oppstart script på alle maskiner for å installere puppet agent 
           wget https://apt.puppetlabs.com/puppet6-release-bionic.deb
           sudo dpkg -i puppet6-release-bionic.deb
@@ -106,9 +105,8 @@ resources:
           puppet module install puppetlabs-ntp
           puppet module install saz-timezone
 
-          #last ned modulene for å installere gitlab og postgres
+          #last ned modulene for å installere postgres
           puppet module install puppetlabs-postgresql
-          puppet module install puppet-gitlab
           
           echo "# time.pp:
           node default {
@@ -153,26 +151,9 @@ resources:
             auth_method => 'md5',
           }" >> ~/postgres.pp
 
-          echo "class { 'gitlab':
-            external_url => 'http://$managerIP',
-            gitlab_rails => {
-              'db_adapter' => "postgresql",
-              'db_encoding' => "unicode",
-              'db_username' => "manager",
-              'db_password' => "password",
-              'db_host' => '$managerIP',
-              'db_port' => 5432,
-            },
-            logging      => {
-              'svlogd_size' => '200 * 1024 * 1024',
-            },
-          }" >> ~/gitlab.pp
-
           
           puppet apply ~/time.pp
           puppet apply ~/postgres.pp
-          puppet apply ~/gitlab.pp
-          cat /etc/gitlab/initial_root_password
         networks:
           - port: { get_resource: instance_port }
   
