@@ -1,6 +1,6 @@
 #!/bin/bash -v
 
-#sjekk om fil med scale up/down URL eksisterer
+#Check if file to hold the Openstack API scale up url exists 
 FILE=~/infrastructureAsCode/manager/scale_up_url
 if [ -f "$FILE" ]; then
     echo "$FILE exists."
@@ -9,10 +9,10 @@ else
     exit 1
 fi
 
-#Hent scale up/down URL
+#Retrieve the URL
 scale_up_url=$(cat ~/infrastructureAsCode/manager/scale_up_url)
 
-#Send POST forespørsel om å øke antall servere til openstack API-et 
+#Send POST request to Openstack API which creates one of the gitlab servers and adds it to load_balancer
 curl -X POST $scale_up_url
 
 

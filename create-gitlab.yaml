@@ -1,5 +1,5 @@
 heat_template_version: 2016-10-14
-
+description: One manager and autoscaling group of additional servers
 parameters:
   flavor:
     type: string
@@ -86,7 +86,7 @@ resources:
         user_data_format: RAW
         user_data: |
           #!/bin/bash -v
-          #Oppstart script på alle maskiner for å installere puppet agent 
+          #Start up script to install Puppet agent
           wget https://apt.puppetlabs.com/puppet6-release-bionic.deb
           sudo dpkg -i puppet6-release-bionic.deb
           sudo apt-get update
@@ -95,19 +95,17 @@ resources:
           # add Puppet binaries to PATH:
           echo 'export PATH=$PATH:/opt/puppetlabs/bin/' >> ~/.bashrc
           
-          #Prøv å få tilgang til puppet kommandoene
+          #Get access to Puppet commands
           export PATH=/opt/puppetlabs/bin:$PATH
-
-          # source .bashrc to apply:
-          source ~/.bashrc
           
-          #Set riktig tidssone på alle servere
+          #Install Puppet modules for coordinating time between instances
           puppet module install puppetlabs-ntp
           puppet module install saz-timezone
 
-          #last ned modulene for å installere postgres
+          #Install Puppet module for configuration of postgress
           puppet module install puppetlabs-postgresql
           
+          #Create Puppet file for coordinating time
           echo "# time.pp:
           node default {
             include ntp
@@ -182,7 +180,7 @@ resources:
             str_replace:
               template: |
                 #!/bin/bash -v
-                #Oppstart script på alle maskiner for å installere puppet agent 
+                #Start up script to install Puppet agent
                 wget https://apt.puppetlabs.com/puppet6-release-bionic.deb
                 sudo dpkg -i puppet6-release-bionic.deb
                 sudo apt-get update
@@ -191,22 +189,20 @@ resources:
                 # add Puppet binaries to PATH:
                 echo 'export PATH=$PATH:/opt/puppetlabs/bin/' >> ~/.bashrc
 
-                #Prøv å få tilgang til puppet kommandoene
+                #Get access to Puppet commands
                 export PATH=/opt/puppetlabs/bin:$PATH
                 
-                # source .bashrc to apply:
-                source ~/.bashrc
-                
-                #Hent egen IP
+                #Retrieve instance IPv4 address
                 serverIP=$(hostname -I | awk '{print $1}')
 
-                #Set riktig tidssone på alle servere
+                #Install Puppet modules for coordinating time between instances
                 puppet module install puppetlabs-ntp
                 puppet module install saz-timezone
                 
-                #last ned modulene for å installere gitlab
+                #Install Puppet module for configuration of gitlab
                 puppet module install puppet-gitlab
                
+                #Create Puppet file for coordinating time
                 echo "# time.pp:
                 node default {
                   include ntp
@@ -215,6 +211,7 @@ resources:
                   }
                 }" >> ~/time.pp
 
+                #Create Puppet file for gitlab installation
                 echo "class { 'gitlab':
                   external_url => 'http://$serverIP',
                   gitlab_rails => {
@@ -230,9 +227,11 @@ resources:
                   },
                 }" >> ~/gitlab.pp
 
-                #Kjør puppet kode
+                #Run Puppet Code
                 puppet apply ~/time.pp
                 puppet apply ~/gitlab.pp
+
+                #Print root password in cloud init log on Openstack
                 cat /etc/gitlab/initial_root_password
               params:
                 $managerIP: { get_attr: [ manager, first_address ] }
@@ -283,8 +282,6 @@ resources:
       auto_scaling_group_id: {get_resource: asg}
       cooldown: 60
       scaling_adjustment: -1
-
- 
 
 outputs:
   scale_up_url:

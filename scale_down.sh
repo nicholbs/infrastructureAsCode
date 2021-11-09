@@ -1,6 +1,6 @@
 #!/bin/bash -v
 
-#sjekk om fil med scale up/down URL eksisterer
+#Check if file to hold the Openstack API scale down url exists 
 FILE=~/infrastructureAsCode/manager/scale_down_url
 if [ -f "$FILE" ]; then
     echo "$FILE exists."
@@ -9,9 +9,9 @@ else
     exit 1
 fi
 
-#Hent scale up/down URL
+#Retrieve the URL
 scale_up_url=$(cat ~/infrastructureAsCode/manager/scale_down_url)
 
-#Send POST forespørsel om å minske antall servere til openstack API-et 
+#Send POST request to Openstack API which deletes one of the gitlab servers and removes it from load_balancer
 curl -X POST $scale_up_url
 
