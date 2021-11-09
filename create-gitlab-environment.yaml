@@ -18,9 +18,6 @@ parameters:
     type: string
     description: Name of the network connected to internett
     default: ntnu-internal  
-  openstackIP:
-    type: string
-    description: IP address of the client with access to the openstack "API"
   stack_name:
     type: string
     description: Name of the stack to be created

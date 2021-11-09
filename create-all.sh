@@ -5,7 +5,6 @@ stackName="infraStack"
 keyPairName="slettMeg"
 stackNameClient="puppet-server"
 stackNameAuto="autoScale"
-openstackIP=$(hostname -I | awk '{print $1}')
 
 
 #TODO Check if keypair exists
@@ -34,7 +33,7 @@ else
 fi	
 
 #Create a stack from the 'create-all.yaml' template and send keypair as parameter
-openstack stack create --template  ~/infrastructureAsCode/create-gitlab-environment.yaml -e ~/infrastructureAsCode/env-variables.yaml --parameter "keyPair_name=$keyPairName;openstackIP=$openstackIP;stack_name=$stackName" $stackName
+openstack stack create --template  ~/infrastructureAsCode/create-gitlab-environment.yaml -e ~/infrastructureAsCode/env-variables.yaml --parameter "keyPair_name=$keyPairName;stack_name=$stackName" $stackName
 
 #TODO test om stack har completed successfully
 ref="CREATE_COMPLETE"
