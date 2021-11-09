@@ -34,6 +34,12 @@ resources:
           - protocol: tcp
             port_range_min: 80
             port_range_max: 80
+          - protocol: tcp
+            port_range_min: 8140
+            port_range_max: 8140
+          - protocol: tcp
+            port_range_min: 5432
+            port_range_max: 5432
 
   internal_net:
       type: OS::Neutron::Net
@@ -179,8 +185,8 @@ resources:
   asg:
     type: OS::Heat::AutoScalingGroup
     properties:
-      min_size: 1
-      max_size: 3
+      min_size: 4
+      max_size: 8
       resource:
         type: gitlab-agent.yaml
         properties:
