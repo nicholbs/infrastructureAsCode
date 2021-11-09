@@ -225,8 +225,6 @@ resources:
                   }
                 }" >> ~/time.pp
 
-                
-
                 echo "class { 'gitlab':
                   gitlab_rails => {
                     'db_adapter' => "postgresql",
