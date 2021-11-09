@@ -25,7 +25,7 @@ parameters:
     type: string
     description: Subnet used by the server
   security_group:
-    type: list
+    type: string
     description: Security groups
 
 resources:
