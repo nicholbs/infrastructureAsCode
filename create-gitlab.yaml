@@ -89,10 +89,13 @@ resources:
 
           # add Puppet binaries to PATH:
           echo 'export PATH=$PATH:/opt/puppetlabs/bin/' >> ~/.bashrc
+          
+          #Prøv å få tilgang til puppet kommandoene
+          export PATH=/opt/puppetlabs/bin:$PATH
 
           # source .bashrc to apply:
           source ~/.bashrc
-
+          . /opt/puppetlabs/bin
           #Set riktig tidssone på alle servere
           puppet module install puppetlabs-ntp
           puppet module install saz-timezone
@@ -199,6 +202,9 @@ resources:
                 # add Puppet binaries to PATH:
                 echo 'export PATH=$PATH:/opt/puppetlabs/bin/' >> ~/.bashrc
 
+                #Prøv å få tilgang til puppet kommandoene
+                export PATH=/opt/puppetlabs/bin:$PATH
+                
                 # source .bashrc to apply:
                 source ~/.bashrc
 
